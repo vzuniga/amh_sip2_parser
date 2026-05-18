@@ -1,0 +1,1 @@
+Sample file placeholder. This folder will stored any files you upload for parsing into the app.
