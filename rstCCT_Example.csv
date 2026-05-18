@@ -1,0 +1,9 @@
+Collection Code,Description,Call # Sort (Y/N),Sort Position,Number Of Characters,Find Binding (Y/N),Sort 1,Sort 2,Sort 3,Sort 4,Sort 5,Sort 6,Oversize
+AA,Biography,N,0,0,N,3,0,0,0,0,0,0
+BB,Graphic Novel,N,0,0,N,4,0,0,0,0,0,0
+CC,Teen Nonfiction,N,0,0,N,4,0,0,0,0,0,0
+"B2ct,B2*",Branch2,,,,,6,,,,,,
+"C3yz,C3*",Branch3,,,,,8,,,,,,
+ALERT,Item with Alert from ILS,N,0,0,N,0,0,0,0,0,0,0
+,,,,,,,,,,,,
+Include all location codes for your branches here. Follow the format display above.,,,,,,,,,,,,
