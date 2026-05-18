@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>AMH SIP2 Parser</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        h1, h2 {
+            margin-bottom: 0.4rem;
+        }
+
+        .top-nav {
+            margin-bottom: 16px;
+        }
+
+        .top-nav a {
+            margin-right: 16px;
+            text-decoration: none;
+            color: #005a9c;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .flash {
+            padding: 10px 12px;
+            background: #fff3cd;
+            border: 1px solid #ffecb5;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-box {
+            display: block;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .summary-box:hover {
+            background: #f0f6fb;
+            border-color: #9fc4e6;
+        }
+
+        .summary-box strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        form {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        input, select, button {
+            padding: 8px 10px;
+            border: 1px solid #999;
+            border-radius: 6px;
+            background: #fff;
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .button-link {
+            display: inline-block;
+            padding: 8px 14px;
+            border: 1px solid #999;
+            border-radius: 6px;
+            background: #fff;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .button-link:hover {
+            background: #f0f0f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        th {
+            background: #f1f1f1;
+            position: sticky;
+            top: 0;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            max-height: 70vh;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 0.92rem;
+        }
+
+        /* Row highlighting */
+
+        .status-error {
+            background: #ffe0e0;
+        }
+
+        .status-holdshelf {
+            background: #eaf4ff;
+        }
+
+        .status-transit {
+            background: #edf8ed;
+        }
+
+        .status-other {
+            background: #f3f0ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <a href="/">Home</a>
+        <a href="/fields?source_file={{ filters.source_file }}">Field Definitions</a>
+    </div>
+
+    <h1>AMH SIP2 Parser</h1>
+    <p>
+        Upload a SIP2 AMH log file to parse check-in transactions, assign items to bins using
+        <code>rstCCT.csv</code>, and review routing context from the SIP response.
+    </p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="flash">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Upload -->
+    <div class="card">
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="logfile" accept=".txt,.log">
+            <button type="submit">Upload and Parse</button>
+        </form>
+    </div>
+
+    {% if filename %}
+    <div class="card">
+        <h2>Current File</h2>
+        <p><strong>{{ filename }}</strong></p>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+        <h2>Filters</h2>
+
+        <form method="get" class="filter-form">
+            <input type="hidden" name="source_file" value="{{ filters.source_file }}">
+
+            <div class="filter-group">
+                <label>Transaction Date</label>
+                <input type="date" name="filter_date" value="{{ filters.filter_date }}">
+            </div>
+
+            <div class="filter-group">
+                <label>Time From</label>
+                <input type="time" name="filter_time_start" value="{{ filters.filter_time_start }}">
+            </div>
+
+            <div class="filter-group">
+                <label>Time To</label>
+                <input type="time" name="filter_time_end" value="{{ filters.filter_time_end }}">
+            </div>
+
+            <div class="filter-group">
+                <label>Assigned Bin</label>
+                <select name="filter_bin">
+                    <option value="">All Bins</option>
+                    {% for bin_num in range(0, 9) %}
+                    <option value="{{ bin_num }}" {% if filters.filter_bin == bin_num|string %}selected{% endif %}>
+                        {% if bin_num == 0 %}Bin 0 - Exceptions{% else %}Bin {{ bin_num }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Home Location (AQ)</label>
+                <select name="filter_location">
+                    <option value="">All Locations</option>
+                    {% for loc in all_locations %}
+                    <option value="{{ loc }}" {% if filters.filter_location == loc %}selected{% endif %}>
+                        {{ loc }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit">Apply Filters</button>
+                <a class="button-link" href="/?source_file={{ filters.source_file }}">Clear Filters</a>
+            </div>
+        </form>
+
+        <!-- Export -->
+        <form method="get" action="/export-csv" style="margin-top: 12px;">
+            <input type="hidden" name="export_id" value="{{ export_id }}">
+            <button type="submit">Export Filtered CSV</button>
+        </form>
+
+    </div>
+    {% endif %}
+
+    <!-- Summary -->
+    {% if summary %}
+    <div class="card">
+        <h2>Bin Summary</h2>
+        <p class="muted">Click a bin to filter the table below.</p>
+
+        <div class="summary-grid">
+
+            <a class="summary-box"
+               href="/?source_file={{ filters.source_file }}&filter_date={{ filters.filter_date }}&filter_time_start={{ filters.filter_time_start }}&filter_time_end={{ filters.filter_time_end }}&filter_location={{ filters.filter_location }}">
+                <strong>{{ summary.total_rows }}</strong>
+                All Filtered Rows
+            </a>
+
+            {% for item in summary.bins %}
+            <a class="summary-box"
+               href="/?source_file={{ filters.source_file }}&filter_date={{ filters.filter_date }}&filter_time_start={{ filters.filter_time_start }}&filter_time_end={{ filters.filter_time_end }}&filter_location={{ filters.filter_location }}&filter_bin={{ item.bin }}">
+                <strong>{{ item.count }}</strong>
+                {{ item.label }}<br>
+                {{ item.percent }}%
+            </a>
+            {% endfor %}
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Table -->
+    {% if rows %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Bin</th>
+                    <th>Barcode</th>
+                    <th>Title</th>
+                    <th>AQ</th>
+                    <th>CSV Code</th>
+                    <th>Description</th>
+                    <th>AF</th>
+                    <th>CR</th>
+                    <th>CT Raw</th>
+                    <th>CT Location</th>
+                    <th>CT Patron</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in rows %}
+                <tr class="
+                    {% if row.route_status in ['error', 'missing_response'] %}
+                        status-error
+                    {% elif row.route_status == 'holdshelf' %}
+                        status-holdshelf
+                    {% elif row.route_status in ['transit_hold', 'transit_permanent'] %}
+                        status-transit
+                    {% elif row.route_status not in ['', None, 'in_place', 'unknown'] %}
+                        status-other
+                    {% endif %}
+                ">
+                    <td>{{ row.transaction_date }}</td>
+                    <td>{{ row.transaction_time }}</td>
+                    <td>{{ row.expected_bin }}</td>
+                    <td>{{ row.item_barcode_ab }}</td>
+                    <td>{{ row.title_aj }}</td>
+                    <td>{{ row.aq_display }}</td>
+                    <td>{{ row.config_collection_code }}</td>
+                    <td>{{ row.config_description }}</td>
+                    <td>{{ row.screen_message_af }}</td>
+                    <td>{{ row.source_location_cr }}</td>
+                    <td>{{ row.routing_target_ct or row.routing_target_cl }}</td>
+                    <td>{{ row.ct_destination_location }}</td>
+                    <td>{{ row.ct_patron_barcode }}</td>
+                    <td>{{ row.route_status }}</td>
+                    <td>{{ row.notes }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</body>
+</html>

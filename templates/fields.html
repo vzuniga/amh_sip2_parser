@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>AMH SIP2 Field Definitions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            background: #f7f7f7;
+            color: #222;
+        }
+
+        .top-nav {
+            margin-bottom: 16px;
+        }
+
+        .top-nav a {
+            margin-right: 16px;
+            text-decoration: none;
+            color: #005a9c;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        th {
+            background: #f1f1f1;
+        }
+
+        code {
+            background: #f3f3f3;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="/">Home</a>
+        <a href="/fields">Field Definitions</a>
+    </div>
+
+    <h1>AMH SIP2 Field Definitions</h1>
+    <p>This page explains the main SIP fields displayed in the app and shows a sample transaction to help staff interpret the data on screen or provide examples in support tickets.</p>
+
+    <div class="card">
+        <h2>Field Reference</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Friendly Label</th>
+                    <th>Definition</th>
+                    <th>Why It Matters</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field in field_definitions %}
+                <tr>
+                    <td><code>{{ field.code }}</code></td>
+                    <td>{{ field.label }}</td>
+                    <td>{{ field.definition }}</td>
+                    <td>{{ field.why_it_matters }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Sample Transaction</h2>
+        {% if sample_row %}
+        <table>
+            <tbody>
+                <tr>
+                    <th>Transaction Date</th>
+                    <td>{{ sample_row.transaction_date or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Transaction Time</th>
+                    <td>{{ sample_row.transaction_time or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Transaction Date/Time</th>
+                    <td>{{ sample_row.transaction_datetime or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Request Log Timestamp</th>
+                    <td>{{ sample_row.request_log_timestamp or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Response Log Timestamp</th>
+                    <td>{{ sample_row.response_log_timestamp or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Item Barcode (AB)</th>
+                    <td>{{ sample_row.item_barcode_ab or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Title (AJ)</th>
+                    <td>{{ sample_row.title_aj or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Home Location (AQ)</th>
+                    <td>{{ sample_row.aq_display or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Assigned Bin</th>
+                    <td>{{ sample_row.expected_bin }}</td>
+                </tr>
+                <tr>
+                    <th>CSV Description</th>
+                    <td>{{ sample_row.config_description or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Route Message (AF)</th>
+                    <td>{{ sample_row.screen_message_af or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Source Location (CR)</th>
+                    <td>{{ sample_row.source_location_cr or "" }}</td>
+                </tr>
+                <tr>
+                    <th>CT Raw</th>
+                    <td>{{ sample_row.routing_target_ct or sample_row.routing_target_cl or "" }}</td>
+                </tr>
+                <tr>
+                    <th>CT Destination Location</th>
+                    <td>{{ sample_row.ct_destination_location or "" }}</td>
+                </tr>
+                <tr>
+                    <th>CT Patron Barcode</th>
+                    <td>{{ sample_row.ct_patron_barcode or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Route Status</th>
+                    <td>{{ sample_row.route_status or "" }}</td>
+                </tr>
+                <tr>
+                    <th>Notes</th>
+                    <td>{{ sample_row.notes or "" }}</td>
+                </tr>
+            </tbody>
+        </table>
+        {% else %}
+        <p>No sample transaction is available yet. Upload and parse a log file first, then return to this page.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
